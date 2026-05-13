@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "your-gcp-project-id",
+    "staging": "ai-starter-gcp"
+  },
+  "targets": {},
+  "etags": {}
+}

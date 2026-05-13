@@ -1,0 +1,16 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions backend for AI starter template",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "firebase-functions": "^4.5.0"
+  }
+}

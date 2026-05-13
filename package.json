@@ -1,0 +1,9 @@
+{
+  "name": "ai-starter-gcp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "deploy": "firebase deploy",
+    "serve": "firebase emulators:start"
+  }
+}
