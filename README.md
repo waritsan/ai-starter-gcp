@@ -5,7 +5,7 @@ A minimal reusable AI app template for Google Cloud with pay-per-invocation serv
 ## What this template includes
 
 - `Firebase Hosting` for static frontend
-- `Firebase Functions` for backend API
+- `Cloud Run` for backend API and streaming responses
 - External LLM provider adapter for on-demand inference
 - Reusable app skeleton for future AI MVPs
 
@@ -27,7 +27,7 @@ A minimal reusable AI app template for Google Cloud with pay-per-invocation serv
    LLM_MODEL="gpt-4o-mini"
    ```
    (Note: The .env file is already configured with your OpenAI API key)
-4. Authenticate gcloud and deploy the frontend and backend:
+4. Authenticate gcloud and deploy the frontend and backend to Cloud Run for streaming support:
    ```bash
    gcloud auth login
    ./deploy.sh
@@ -36,8 +36,8 @@ A minimal reusable AI app template for Google Cloud with pay-per-invocation serv
 ## How it works
 
 - Frontend sends a prompt to `/generate`
-- Cloud Function formats the request and calls an external LLM API
-- Backend returns the AI response to the frontend
+- Cloud Run streams the OpenAI response back to the browser
+- Backend returns incremental text chunks so users see results immediately
 
 ## Customize for future projects
 

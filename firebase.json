@@ -13,11 +13,17 @@
     "rewrites": [
       {
         "source": "/generate",
-        "function": "api"
+        "run": {
+          "serviceId": "api",
+          "region": "us-central1"
+        }
       },
       {
         "source": "/api/**",
-        "function": "api"
+        "run": {
+          "serviceId": "api",
+          "region": "us-central1"
+        }
       },
       {
         "source": "**",

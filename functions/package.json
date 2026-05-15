@@ -1,7 +1,9 @@
 {
   "name": "functions",
-  "description": "Cloud Functions backend for AI starter template",
+  "description": "Cloud Functions/Cloud Run backend for AI starter template",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "serve": "firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
   },

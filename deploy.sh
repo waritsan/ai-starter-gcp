@@ -9,13 +9,8 @@ if ! command -v firebase >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "Deploying Firebase Hosting..."
-firebase deploy --only hosting
-
-echo "Hosting deployed."
-
 if command -v gcloud >/dev/null 2>&1; then
-  echo "gcloud found. Deploying Functions via gcloud to ensure unauthenticated access..."
+  echo "gcloud found. Deploying Cloud Run service via gcloud to ensure streaming support..."
 
   if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" >/dev/null 2>&1; then
     echo "No active gcloud account found. Run 'gcloud auth login' and rerun this script."
@@ -44,18 +39,21 @@ if command -v gcloud >/dev/null 2>&1; then
   done < "functions/.env"
 
   gcloud config set project ai-starter-gcp >/dev/null
-  gcloud functions deploy api \
+  gcloud run deploy api \
     --region=us-central1 \
-    --runtime=nodejs20 \
-    --trigger-http \
-    --entry-point=api \
+    --platform=managed \
     --allow-unauthenticated \
     --source=functions \
     --set-env-vars="$env_string"
 
-  echo "Functions deployed via gcloud."
+  echo "Cloud Run service deployed via gcloud."
 else
-  echo "gcloud not found; only Hosting was deployed. Install gcloud to deploy Functions with public access."
+  echo "gcloud not found; only Hosting will be deployed. Install gcloud to deploy Cloud Run with public access."
 fi
+
+echo "Deploying Firebase Hosting..."
+firebase deploy --only hosting
+
+echo "Hosting deployed."
 
 echo "Deployment complete."

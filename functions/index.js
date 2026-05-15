@@ -13,14 +13,15 @@ const getProviderConfig = () => {
   };
 };
 
-const callExternalLLM = async (prompt) => {
+const callExternalLLMStream = async (prompt, res) => {
   const { apiKey, apiUrl, model } = getProviderConfig();
   if (!apiKey || !apiUrl || !model) {
-    throw new Error('AI provider configuration is missing. Set ai.key, ai.url, and ai.model.');
+    throw new Error('AI provider configuration is missing. Set LLM_API_KEY, LLM_API_URL, and LLM_MODEL.');
   }
 
   const payload = {
     model,
+    stream: true,
     messages: [
       { role: 'system', content: 'You are a helpful assistant.' },
       { role: 'user', content: prompt }
@@ -41,8 +42,37 @@ const callExternalLLM = async (prompt) => {
     throw new Error(`LLM provider error: ${response.status} ${errorText}`);
   }
 
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || data.result || JSON.stringify(data);
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed === 'data: [DONE]') continue;
+      if (!trimmed.startsWith('data: ')) continue;
+
+      const payloadText = trimmed.slice('data: '.length);
+      try {
+        const parsed = JSON.parse(payloadText);
+        const delta = parsed.choices?.[0]?.delta?.content;
+        if (delta) {
+          res.write(delta);
+        }
+      } catch (err) {
+        // Ignore malformed stream lines.
+      }
+    }
+  }
 };
 
 app.post(['/generate', '/api/generate'], async (req, res) => {
@@ -52,12 +82,27 @@ app.post(['/generate', '/api/generate'], async (req, res) => {
       return res.status(400).json({ error: 'Missing prompt in request body.' });
     }
 
-    const aiResponse = await callExternalLLM(prompt);
-    return res.json({ output: aiResponse });
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    await callExternalLLMStream(prompt, res);
+    res.end();
+    return null;
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    if (!res.headersSent) {
+      return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+    res.write(`\n\nError: ${error.message || 'Internal server error'}`);
+    res.end();
+    return null;
   }
 });
 
-exports.api = functions.region('us-central1').https.onRequest(app);
+const api = functions.region('us-central1').https.onRequest(app);
+
+module.exports = { app, api };

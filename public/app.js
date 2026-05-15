@@ -20,12 +20,23 @@ submitButton.addEventListener('click', async () => {
       body: JSON.stringify({ prompt })
     });
 
-    const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || 'Request failed');
+      const errorText = await response.text();
+      throw new Error(errorText || 'Request failed');
     }
 
-    outputEl.textContent = data.output;
+    statusEl.textContent = 'Streaming response...';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let partial = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      partial += decoder.decode(value, { stream: true });
+      outputEl.textContent = partial;
+    }
+
     statusEl.textContent = 'Done';
   } catch (error) {
     statusEl.textContent = `Error: ${error.message}`;
